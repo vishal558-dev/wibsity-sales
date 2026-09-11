@@ -9,6 +9,8 @@ export function PipelineCard({ lead }: { lead: LeadRecord }) {
   return (
     <Link
       href={`/leads/${lead.id}`}
+      draggable
+      onDragStart={(e) => e.dataTransfer.setData("text/plain", lead.id)}
       className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-3 hover:border-foreground/30"
     >
       <span className="text-sm font-medium text-foreground">{lead.business_name}</span>

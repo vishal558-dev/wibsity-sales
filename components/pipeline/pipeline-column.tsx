@@ -5,12 +5,22 @@ import { PipelineCard } from "@/components/pipeline/pipeline-card";
 export function PipelineColumn({
   stage,
   leads,
+  onDrop,
 }: {
   stage: PipelineStage;
   leads: LeadRecord[];
+  onDrop: (leadId: string, stage: PipelineStage) => void;
 }) {
   return (
-    <div className="flex w-64 shrink-0 flex-col gap-2 rounded-lg border border-border bg-muted/30 p-2">
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const leadId = e.dataTransfer.getData("text/plain");
+        if (leadId) onDrop(leadId, stage);
+      }}
+      className="flex w-64 shrink-0 flex-col gap-2 rounded-lg border border-border bg-muted/30 p-2"
+    >
       <div className="flex items-center justify-between px-1 py-1">
         <span className="text-sm font-medium text-foreground">{stage.name}</span>
         <span className="text-sm text-muted-foreground">{leads.length}</span>
