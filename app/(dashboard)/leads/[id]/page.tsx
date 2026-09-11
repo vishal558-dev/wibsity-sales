@@ -1,22 +1,36 @@
-import { UserRound } from "lucide-react";
-import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getLeadById, getNotesForLead } from "@/lib/crm/leads";
+import { LeadDetailHeader } from "@/components/leads/lead-detail-header";
+import { ContactInfoCard } from "@/components/leads/contact-info-card";
+import { LeadNotes } from "@/components/leads/lead-notes";
 
 export default async function LeadDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await params;
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from("users")
+    .select("organization_id")
+    .eq("id", user!.id)
+    .single();
+
+  const lead = await getLeadById(supabase, profile!.organization_id, id);
+  if (!lead) notFound();
+
+  const notes = await getNotesForLead(supabase, lead.id);
 
   return (
     <>
-      <PageHeader title="Lead" description="Contact info, score, and activity for this lead." />
-      <EmptyState
-        icon={UserRound}
-        title="Lead detail is coming in Phase 2"
-        description="Contact actions, the score breakdown, notes, and the activity timeline land here."
-      />
+      <LeadDetailHeader lead={lead} />
+      <ContactInfoCard lead={lead} />
+      <LeadNotes leadId={lead.id} notes={notes} />
     </>
   );
 }
