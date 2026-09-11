@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLeadById, getNotesForLead } from "@/lib/crm/leads";
+import { getActivitiesForLead } from "@/lib/crm/activities";
 import { LeadDetailHeader } from "@/components/leads/lead-detail-header";
 import { ContactInfoCard } from "@/components/leads/contact-info-card";
 import { LeadNotes } from "@/components/leads/lead-notes";
+import { ActivityTimeline } from "@/components/leads/activity-timeline";
 
 export default async function LeadDetailPage({
   params,
@@ -25,12 +27,14 @@ export default async function LeadDetailPage({
   if (!lead) notFound();
 
   const notes = await getNotesForLead(supabase, lead.id);
+  const activities = await getActivitiesForLead(supabase, lead.id);
 
   return (
     <>
       <LeadDetailHeader lead={lead} />
       <ContactInfoCard lead={lead} />
       <LeadNotes leadId={lead.id} notes={notes} />
+      <ActivityTimeline activities={activities} />
     </>
   );
 }
