@@ -3,21 +3,7 @@ import type { Lead } from "@/types/lead";
 import { LeadScoreBadge } from "@/components/lead-score-badge";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-
-function followUpLabel(nextFollowupAt: string | null) {
-  if (!nextFollowupAt) return null;
-
-  const due = new Date(nextFollowupAt);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  due.setHours(0, 0, 0, 0);
-
-  const daysDiff = Math.round((today.getTime() - due.getTime()) / 86_400_000);
-
-  if (daysDiff > 0) return `${daysDiff} day${daysDiff === 1 ? "" : "s"} overdue`;
-  if (daysDiff === 0) return "Follow up today";
-  return "Follow up scheduled";
-}
+import { followUpLabel } from "@/lib/crm/followups";
 
 export function LeadActionList({
   leads,
