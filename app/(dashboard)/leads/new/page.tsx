@@ -1,19 +1,11 @@
-import { Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
+import { GenerationForm } from "@/components/leads/generation-form";
 
-export default function NewLeadPage() {
+export default function NewLeadGenerationPage() {
   return (
-    <>
-      <PageHeader
-        title="Generate leads"
-        description="Find new prospects by industry and location."
-      />
-      <EmptyState
-        icon={Sparkles}
-        title="Lead generation is coming in Phase 3"
-        description="This form will kick off an asynchronous job that finds, analyzes, and scores new leads."
-      />
-    </>
+    <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Generate leads" />
+      <GenerationForm />
+    </div>
   );
 }
