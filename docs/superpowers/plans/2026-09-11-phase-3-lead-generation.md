@@ -456,26 +456,32 @@ export const mockBusinessSearchProvider: BusinessSearchProvider = {
 import assert from "node:assert";
 import { mockBusinessSearchProvider } from "./mock";
 
-const results = await mockBusinessSearchProvider.search({
-  industry: "Solar companies",
-  location: "Noida",
-  count: 25,
-});
+// tsx transpiles this file as CJS by default, which doesn't support
+// top-level await — wrap in an async function instead.
+async function main() {
+  const results = await mockBusinessSearchProvider.search({
+    industry: "Solar companies",
+    location: "Noida",
+    count: 25,
+  });
 
-assert.strictEqual(results.length, 25);
-for (const business of results) {
-  assert.strictEqual(typeof business.name, "string");
-  assert.ok(business.name.length > 0);
-  assert.strictEqual(business.industry, "Solar companies");
-  assert.strictEqual(business.city, "Noida");
-  assert.strictEqual(business.country, "India");
-  assert.ok(business.rating === null || (business.rating >= 2.5 && business.rating <= 5));
+  assert.strictEqual(results.length, 25);
+  for (const business of results) {
+    assert.strictEqual(typeof business.name, "string");
+    assert.ok(business.name.length > 0);
+    assert.strictEqual(business.industry, "Solar companies");
+    assert.strictEqual(business.city, "Noida");
+    assert.strictEqual(business.country, "India");
+    assert.ok(business.rating === null || (business.rating >= 2.5 && business.rating <= 5));
+  }
+
+  const uniqueExternalIds = new Set(results.map((b) => b.external_id));
+  assert.strictEqual(uniqueExternalIds.size, results.length, "external_ids must be unique within a batch");
+
+  console.log("providers/business-search/mock.test.ts: all checks passed");
 }
 
-const uniqueExternalIds = new Set(results.map((b) => b.external_id));
-assert.strictEqual(uniqueExternalIds.size, results.length, "external_ids must be unique within a batch");
-
-console.log("providers/business-search/mock.test.ts: all checks passed");
+main();
 ```
 
 - [ ] **Step 4: Run the self-check**
@@ -1023,6 +1029,10 @@ const PROVIDER_NAME = "mock";
 export const generateLeads = inngest.createFunction(
   {
     id: "generate-leads",
+    // Inngest v4's createFunction takes only (options, handler) — the
+    // trigger lives on `triggers` inside the same options object, not as
+    // a separate positional argument like older Inngest versions.
+    triggers: { event: "leadgen/job.created" },
     // Dedupes concurrent/duplicate triggers of the same job (e.g. a flaky
     // client double-sending the event) so only one run per jobId proceeds.
     idempotency: "event.data.jobId",
@@ -1036,7 +1046,6 @@ export const generateLeads = inngest.createFunction(
       await markJobFailed(supabase, jobId, error.message, counters);
     },
   },
-  { event: "leadgen/job.created" },
   async ({ event, step }) => {
     const { jobId } = event.data as { jobId: string };
     const supabase = createAdminClient();
