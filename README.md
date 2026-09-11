@@ -58,6 +58,14 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
    Open [http://localhost:3000](http://localhost:3000) and sign in with the
    seeded operator credentials.
 
+6. **Run background jobs locally** (needed for `/leads/new` to actually generate leads):
+
+   ```bash
+   npx inngest-cli dev
+   ```
+
+   This auto-discovers `app/api/inngest` with no keys needed in development.
+
 ## What's real vs. a Phase 1 stub
 
 | Area | Status |
@@ -65,8 +73,9 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
 | Auth (login, protected routes, sign out) | Real: Supabase Auth |
 | Dashboard (KPIs, today's actions, priority leads, recent activity) | Real: queries the seeded data |
 | Database schema + RLS (all 14 tables) | Real |
-| `/leads`, `/leads/new`, `/leads/[id]` | Route shell only: Phase 2 |
-| `/pipeline` | Route shell only: Phase 2 |
+| `/leads`, `/leads/[id]` | Real: search, filters, notes, activity timeline, follow-ups (Phase 2) |
+| `/pipeline` | Real: drag-and-drop stage changes (Phase 2) |
+| `/leads/new` | Real: async generation via Inngest, mock provider only (Phase 3) |
 | `/audits`, `/audits/[id]` | Route shell only: Phase 4 |
 | `/settings` | Shows the signed-in account; no editable settings yet |
 
