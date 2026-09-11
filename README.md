@@ -34,6 +34,8 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
    - `db/migrations/0003_grants.sql`: table/function grants for the `authenticated`
      and `service_role` roles (tables created via raw SQL don't get Supabase's usual
      auto-grants, so this step is required)
+   - `db/migrations/0004_generation_job_filters_and_result_lead_id.sql`: Phase 3
+     lead-generation job filters and result-to-lead linkage
 
 4. **Install dependencies and seed demo data**:
 
