@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { runAuditAction, retryAuditAction } from "@/app/(dashboard)/leads/[id]/actions";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import type { WebsiteAudit } from "@/types/audit";
 
 const POLL_INTERVAL_MS = 1500;
+// ponytail: fixed threshold, not tied to Inngest's actual retry/backoff config
+const STUCK_THRESHOLD_MS = 5 * 60 * 1000;
 
 function ScoreRow({ label, value }: { label: string; value: number | null }) {
   return (
@@ -31,13 +33,22 @@ export function AuditCard({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const inProgress = audit?.status === "pending" || audit?.status === "processing";
+  const [isStuck, setIsStuck] = useState(false);
 
   useEffect(() => {
-    if (!audit || !inProgress) return;
+    if (!audit || !inProgress) {
+      setIsStuck(false);
+      return;
+    }
     const supabase = createClient();
     let stopped = false;
 
+    function checkStuck() {
+      setIsStuck(Date.now() - new Date(audit!.created_at).getTime() >= STUCK_THRESHOLD_MS);
+    }
+
     async function poll() {
+      checkStuck();
       const { data } = await supabase.from("website_audits").select("status").eq("id", audit!.id).maybeSingle();
       if (stopped || !data) return;
       if (data.status !== "pending" && data.status !== "processing") {
@@ -47,6 +58,7 @@ export function AuditCard({
       }
     }
 
+    checkStuck();
     const interval = setInterval(poll, POLL_INTERVAL_MS);
     return () => {
       stopped = true;
@@ -75,7 +87,18 @@ export function AuditCard({
         </form>
       )}
 
-      {audit && inProgress && <p className="text-sm text-muted-foreground">Auditing website...</p>}
+      {audit && inProgress && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">Auditing website...</p>
+          {isStuck && (
+            <form action={() => startTransition(() => runAuditAction(leadId))}>
+              <Button type="submit" variant="outline" size="sm" disabled={isPending}>
+                Start a new audit
+              </Button>
+            </form>
+          )}
+        </div>
+      )}
 
       {audit && audit.status === "failed" && (
         <div className="flex flex-col gap-3">
