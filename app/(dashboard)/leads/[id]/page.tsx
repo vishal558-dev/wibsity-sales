@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLeadById, getNotesForLead } from "@/lib/crm/leads";
 import { getActivitiesForLead } from "@/lib/crm/activities";
+import { getLatestAuditForLead } from "@/lib/audits/queries";
 import { LeadDetailHeader } from "@/components/leads/lead-detail-header";
 import { ContactInfoCard } from "@/components/leads/contact-info-card";
+import { AuditCard } from "@/components/leads/audit-card";
 import { LeadNotes } from "@/components/leads/lead-notes";
 import { ActivityTimeline } from "@/components/leads/activity-timeline";
 import { FollowUpCard } from "@/components/leads/follow-up-card";
@@ -29,11 +31,13 @@ export default async function LeadDetailPage({
 
   const notes = await getNotesForLead(supabase, lead.id);
   const activities = await getActivitiesForLead(supabase, lead.id);
+  const audit = await getLatestAuditForLead(supabase, lead.id);
 
   return (
     <>
       <LeadDetailHeader lead={lead} />
       <ContactInfoCard lead={lead} />
+      <AuditCard leadId={lead.id} website={lead.website} audit={audit} />
       <FollowUpCard leadId={lead.id} nextFollowupAt={lead.next_followup_at} />
       <LeadNotes leadId={lead.id} notes={notes} />
       <ActivityTimeline activities={activities} />
