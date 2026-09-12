@@ -36,6 +36,8 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
      auto-grants, so this step is required)
    - `db/migrations/0004_generation_job_filters_and_result_lead_id.sql`: Phase 3
      lead-generation job filters and result-to-lead linkage
+   - `db/migrations/0005_website_audit_status.sql`: Phase 4 website audit
+     pending/processing status tracking
 
 4. **Install dependencies and seed demo data**:
 
