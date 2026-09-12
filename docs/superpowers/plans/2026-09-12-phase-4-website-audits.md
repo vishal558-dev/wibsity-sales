@@ -58,6 +58,12 @@ alter table website_audits
   add column error text;
 ```
 
+Running this against a database with existing `website_audits` rows (e.g. seed data) backfills every row's `status` as `'pending'` via the column default — including rows that already have real `overall_score`/`summary` data from a completed audit. Correct that with a follow-up statement in the same migration file:
+
+```sql
+update website_audits set status = 'completed' where overall_score is not null;
+```
+
 - [ ] **Step 2: Run the migration**
 
 Run `db/migrations/0005_website_audit_status.sql` in the Supabase SQL Editor against the project's database (this repo has no automated migration runner — see `README.md` step 3).

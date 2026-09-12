@@ -27,7 +27,7 @@ On a successful fetch, the HTML is parsed with `cheerio` (new dependency — a j
 **SEO**
 - `<title>` present and 10–60 characters (too short/long/missing all flagged, different message each)
 - `<meta name="description">` present and 50–160 characters
-- exactly one `<h1>`, and no heading level is skipped going down the document (h1 → h3 with no h2 flagged)
+- exactly one `<h1>` (checks `<h1>` count only — the implementation shipped without the skipped-heading-level check originally scoped here; "Heading structure" as implemented measures h1 count, not full document heading order)
 - `<img>` alt-text coverage: percentage of `<img>` tags with a non-empty `alt` attribute; below 80% flagged
 
 **Mobile UX**
@@ -89,7 +89,7 @@ No AI provider is wired up in this codebase yet, and no API key is available rig
 
 ## UI
 
-- `components/leads/audit-card.tsx` — new section on the lead detail page (`app/(dashboard)/leads/[id]/page.tsx`), shown only when the lead has a `website`. Shows the latest `website_audits` row for the lead (scores, top issues, "Run audit" / "Re-run audit" button). While `status` is `pending`/`processing`, polls and shows progress exactly like `GenerationProgress` (`components/leads/generation-progress.tsx`) — same ~1.5s interval, same completed/failed terminal handling, same Retry-on-failed button calling `retryAuditAction`.
+- `components/leads/audit-card.tsx` — new section on the lead detail page (`app/(dashboard)/leads/[id]/page.tsx`), shown only when the lead has a `website`. Shows the latest `website_audits` row for the lead (scores, AI summary, "Run audit" / "Re-run audit" button — the implementation shipped without a top-issues list on this card; the full issue list lives on `/audits/[id]`, one click away via "View full audit"). While `status` is `pending`/`processing`, polls and shows progress exactly like `GenerationProgress` (`components/leads/generation-progress.tsx`) — same ~1.5s interval, same completed/failed terminal handling, same Retry-on-failed button calling `retryAuditAction`.
 - `app/(dashboard)/audits/page.tsx` — replaces the current empty-state stub. Table per spec §13: Business, Overall, Created, Status — one row per lead (its latest audit only), via `distinct on (lead_id) ... order by lead_id, created_at desc` then re-sorted by `created_at desc` for display. Row links to the lead (not a separate details concept — see next point).
 - `app/(dashboard)/audits/[id]/page.tsx` — full audit detail per spec §13: overall + per-category scores (with "not measured" shown plainly for Performance, never a fake number or a blank), technical findings (the `audit_issues` list, grouped by category), AI summary, priority issues, recommended talking points. Linked from both the `/audits` table and the lead detail audit card.
 - New activity: `runAuditAction`/the completed Inngest run creates an `audited` activity on the lead (spec §17 already lists `audited` as a supported activity type — this phase is what actually starts using it), matching the "Website audited" row already shown in the spec's example timeline.
