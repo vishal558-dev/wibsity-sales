@@ -36,10 +36,7 @@ export function AuditCard({
   const [isStuck, setIsStuck] = useState(false);
 
   useEffect(() => {
-    if (!audit || !inProgress) {
-      setIsStuck(false);
-      return;
-    }
+    if (!audit || !inProgress) return;
     const supabase = createClient();
     let stopped = false;
 
