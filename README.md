@@ -80,7 +80,7 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
 | `/leads`, `/leads/[id]` | Real: search, filters, notes, activity timeline, follow-ups (Phase 2) |
 | `/pipeline` | Real: drag-and-drop stage changes (Phase 2) |
 | `/leads/new` | Real: async generation via Inngest, mock provider only (Phase 3) |
-| `/audits`, `/audits/[id]` | Route shell only: Phase 4 |
+| `/audits`, `/audits/[id]` | Real: fetch + deterministic checks + AI summary (mock interpreter), mobile-only heuristic, no performance metrics (Phase 4) |
 | `/settings` | Shows the signed-in account; no editable settings yet |
 
 ## Regenerating types later
