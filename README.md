@@ -64,7 +64,9 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
    npx inngest-cli dev
    ```
 
-   This auto-discovers `app/api/inngest` with no keys needed in development.
+   This auto-discovers `app/api/inngest`. Requires `INNGEST_DEV=1` in
+   `.env.local` (already in `.env.example`) — without it the SDK assumes
+   cloud mode and rejects requests for lacking a signing key.
 
 ## What's real vs. a Phase 1 stub
 

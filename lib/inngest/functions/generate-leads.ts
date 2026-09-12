@@ -26,9 +26,12 @@ export const generateLeads = inngest.createFunction(
   {
     id: "generate-leads",
     triggers: { event: "leadgen/job.created" },
-    // Dedupes concurrent/duplicate triggers of the same job (e.g. a flaky
-    // client double-sending the event) so only one run per jobId proceeds.
-    idempotency: "event.data.jobId",
+    // No event-level idempotency key: retries intentionally re-send this
+    // event with the same jobId, and Inngest's idempotency dedup (a ~24h
+    // window) would silently drop that resend and never start a new run.
+    // Safety against duplicate/concurrent processing already comes from
+    // each step below only ever touching still-'pending' rows.
+    //
     // Runs once Inngest's own retries are exhausted. Does NOT roll back
     // anything already-created steps did — partial success (leads already
     // created) is preserved, only the job's own status/counters are set.
