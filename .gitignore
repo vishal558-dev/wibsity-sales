@@ -40,6 +40,9 @@ yarn-error.log*
 # git worktrees
 /.worktrees
 
+# superpowers subagent-driven-development scratch workspace
+/.superpowers
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
