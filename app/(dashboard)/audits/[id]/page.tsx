@@ -95,7 +95,10 @@ export default async function AuditDetailPage({
               <ul className="flex flex-col gap-3">
                 {categoryIssues.map((issue) => (
                   <li key={issue.id} className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-foreground">{issue.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{issue.title}</span>
+                      <span className="text-xs uppercase text-muted-foreground">{issue.severity}</span>
+                    </div>
                     <span className="text-sm text-muted-foreground">{issue.description}</span>
                   </li>
                 ))}

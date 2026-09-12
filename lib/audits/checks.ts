@@ -140,11 +140,21 @@ export function checkContactMethod($: CheerioAPI): CheckFinding {
 
 const SOCIAL_HOSTS = ["facebook.com", "instagram.com", "linkedin.com", "twitter.com", "x.com", "wa.me", "whatsapp.com"];
 
+function isSocialLink(href: string): boolean {
+  let hostname: string;
+  try {
+    hostname = new URL(href).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return SOCIAL_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+}
+
 export function checkSocialLinks($: CheerioAPI): CheckFinding {
   const links = $("a[href]")
     .toArray()
     .map((el) => $(el).attr("href") ?? "");
-  const passed = links.some((href) => SOCIAL_HOSTS.some((host) => href.includes(host)));
+  const passed = links.some(isSocialLink);
   return {
     category: "conversion",
     points: 20,

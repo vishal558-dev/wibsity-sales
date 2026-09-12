@@ -234,6 +234,7 @@ async function main() {
         .from("website_audits")
         .insert({
           lead_id: leadId,
+          status: "completed",
           overall_score: Math.max(30, score - 20),
           performance_score: Math.max(20, score - 10),
           mobile_score: Math.max(20, score - 30),

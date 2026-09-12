@@ -4,12 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getLatestAuditsForOrg } from "@/lib/audits/queries";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import type { AuditStatus } from "@/types/audit";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { month: "short", day: "numeric" });
 }
 
-function statusLabel(status: string): string {
+function statusLabel(status: AuditStatus): string {
   if (status === "completed") return "Complete";
   if (status === "failed") return "Failed";
   return "In progress";

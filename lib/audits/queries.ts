@@ -50,11 +50,16 @@ export async function getAuditById(supabase: SupabaseClient, auditId: string): P
   return data as unknown as AuditWithLead | null;
 }
 
+const SEVERITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+// severity is a plain text column, so a DB-level order() would sort
+// alphabetically ("high" < "low" < "medium") — sort client-side instead.
 export async function getIssuesForAudit(supabase: SupabaseClient, auditId: string): Promise<AuditIssue[]> {
-  const { data } = await supabase
-    .from("audit_issues")
-    .select("*")
-    .eq("audit_id", auditId)
-    .order("created_at", { ascending: true });
-  return (data ?? []) as AuditIssue[];
+  const { data } = await supabase.from("audit_issues").select("*").eq("audit_id", auditId);
+  const issues = (data ?? []) as AuditIssue[];
+  return issues.sort((a, b) => {
+    const severityDiff = (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3);
+    if (severityDiff !== 0) return severityDiff;
+    return a.category.localeCompare(b.category);
+  });
 }

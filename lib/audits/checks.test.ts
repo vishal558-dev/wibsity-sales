@@ -58,6 +58,9 @@ assert.strictEqual(checkContactMethod(load("<p>Nothing</p>")).passed, false);
 
 assert.strictEqual(checkSocialLinks(load('<a href="https://facebook.com/us">FB</a>')).passed, true);
 assert.strictEqual(checkSocialLinks(load("<p>No links</p>")).passed, false);
+assert.strictEqual(checkSocialLinks(load('<a href="https://netflix.com">Netflix</a>')).passed, false);
+assert.strictEqual(checkSocialLinks(load('<a href="https://www.dropbox.com/a">Dropbox</a>')).passed, false);
+assert.strictEqual(checkSocialLinks(load('<a href="https://www.facebook.com/page">FB</a>')).passed, true);
 
 assert.strictEqual(checkHttps("https://example.com").passed, true);
 assert.strictEqual(checkHttps("http://example.com").passed, false);
