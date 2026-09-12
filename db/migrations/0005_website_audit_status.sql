@@ -12,3 +12,8 @@ alter table website_audits
   add column status text not null default 'pending'
     check (status in ('pending', 'processing', 'completed', 'failed')),
   add column error text;
+
+-- Existing rows (e.g. seed data) already have real score/summary data from
+-- a completed audit, but the NOT NULL default above backfills them all as
+-- 'pending' — correct that for anything that already has a score.
+update website_audits set status = 'completed' where overall_score is not null;
