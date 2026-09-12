@@ -50,7 +50,6 @@ export async function fetchAndCheckWebsite(url: string): Promise<FetchResult> {
     if (reader) {
       const decoder = new TextDecoder();
       let bytes = 0;
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
