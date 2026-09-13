@@ -77,7 +77,7 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
 | Auth (login, protected routes, sign out) | Real: Supabase Auth |
 | Dashboard (KPIs, today's actions, priority leads, recent activity) | Real: queries the seeded data |
 | Database schema + RLS (all 14 tables) | Real |
-| `/leads`, `/leads/[id]` | Real: search, filters, notes, activity timeline, follow-ups (Phase 2) |
+| `/leads`, `/leads/[id]` | Real: search, filters, notes, activity timeline, follow-ups (Phase 2); deterministic lead scoring with a factor breakdown (Lead Scoring) |
 | `/pipeline` | Real: drag-and-drop stage changes (Phase 2) |
 | `/leads/new` | Real: async generation via Inngest, mock provider only (Phase 3) |
 | `/audits`, `/audits/[id]` | Real: fetch + deterministic checks + AI summary (mock interpreter), mobile-only heuristic, no performance metrics (Phase 4) |
