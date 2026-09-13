@@ -38,6 +38,7 @@ function slugify(value: string): string {
 }
 
 export const mockBusinessSearchProvider: BusinessSearchProvider = {
+  name: "mock",
   async search({ industry, location, count }) {
     const results: RawBusiness[] = [];
 

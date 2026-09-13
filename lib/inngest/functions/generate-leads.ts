@@ -20,7 +20,9 @@ import {
   recomputeJobCounters,
 } from "@/lib/lead-gen/job-store";
 
-const PROVIDER_NAME = "mock";
+function getProviderName(): string {
+  return (process.env.BUSINESS_SEARCH_PROVIDER ?? "mock").toLowerCase();
+}
 
 export const generateLeads = inngest.createFunction(
   {
@@ -81,7 +83,8 @@ export const generateLeads = inngest.createFunction(
     for (const result of pending) {
       await step.run(`process-result-${result.id}`, async () => {
         const business = result.raw_data;
-        const duplicateLeadId = await findDuplicateLeadId(supabase, job.organization_id, PROVIDER_NAME, business);
+        const providerName = getProviderName();
+        const duplicateLeadId = await findDuplicateLeadId(supabase, job.organization_id, providerName, business);
 
         if (duplicateLeadId) {
           await markResultDuplicate(supabase, result.id, duplicateLeadId);
@@ -102,7 +105,7 @@ export const generateLeads = inngest.createFunction(
         const leadId = await createLeadFromBusiness(
           supabase,
           job.organization_id,
-          PROVIDER_NAME,
+          providerName,
           business,
           newStage?.id ?? null,
           jobId,
