@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createActivity } from "@/lib/crm/activities";
+import { computeAndStoreScore } from "@/lib/scoring/apply-score";
 import type { RawBusiness } from "@/types/generation";
 
 // Called only from the org-scoped Inngest pipeline (lib/inngest/functions/):
@@ -49,6 +50,8 @@ export async function createLeadFromBusiness(
   await createActivity(supabase, lead.id, "created", "Lead created from generation", {
     generation_job_id: generationJobId,
   });
+
+  await computeAndStoreScore(supabase, lead.id as string);
 
   return lead.id as string;
 }

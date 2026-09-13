@@ -2,6 +2,7 @@ import { NonRetriableError } from "inngest";
 import { inngest } from "@/lib/inngest/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createActivity } from "@/lib/crm/activities";
+import { computeAndStoreScore } from "@/lib/scoring/apply-score";
 import { fetchAndCheckWebsite } from "@/lib/audits/fetch-website";
 import { computeCategoryScores, computeOverallScore } from "@/lib/audits/score";
 import { getAiInterpreter } from "@/providers/ai-interpreter";
@@ -42,6 +43,7 @@ export const auditWebsite = inngest.createFunction(
         await saveIssues(supabase, auditId, []);
         await markAuditCompleted(supabase, auditId, null, null, fetchResult.error ?? "The site could not be reached.");
       });
+      await step.run("update-lead-score", () => computeAndStoreScore(supabase, audit.lead_id));
       await step.run("log-activity", () => createActivity(supabase, audit.lead_id, "audited", "Website audited"));
       return { reachable: false };
     }
@@ -58,6 +60,7 @@ export const auditWebsite = inngest.createFunction(
     await step.run("mark-completed", () =>
       markAuditCompleted(supabase, auditId, scores, overall, interpretation.summary, interpretation.talkingPoints),
     );
+    await step.run("update-lead-score", () => computeAndStoreScore(supabase, audit.lead_id));
     await step.run("log-activity", () => createActivity(supabase, audit.lead_id, "audited", "Website audited"));
 
     return { reachable: true, overall };
