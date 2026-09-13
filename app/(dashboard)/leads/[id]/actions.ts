@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { markLeadContacted, rescheduleFollowUp, clearFollowUp } from "@/lib/crm/followups";
 import { addNote } from "@/lib/crm/leads";
 import { inngest } from "@/lib/inngest/client";
+import { computeAndStoreScore } from "@/lib/scoring/apply-score";
 
 export async function markContactedAction(leadId: string) {
   const supabase = await createClient();
@@ -61,5 +62,11 @@ export async function retryAuditAction(auditId: string, leadId: string) {
 
   await supabase.from("website_audits").update({ status: "pending", error: null }).eq("id", auditId);
   await inngest.send({ name: "audits/website.requested", data: { auditId } });
+  revalidatePath(`/leads/${leadId}`);
+}
+
+export async function recalculateScoreAction(leadId: string) {
+  const supabase = await createClient();
+  await computeAndStoreScore(supabase, leadId);
   revalidatePath(`/leads/${leadId}`);
 }
