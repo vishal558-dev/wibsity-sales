@@ -6,6 +6,7 @@
  * Run with: npx tsx db/seed.ts
  */
 import { createClient } from "@supabase/supabase-js";
+import { computeAndStoreScore } from "@/lib/scoring/apply-score";
 
 const SEED_ORG_NAME = "wibsity (demo)";
 
@@ -35,13 +36,6 @@ const PIPELINE_STAGES = [
   { name: "Won", slug: "won" },
   { name: "Lost", slug: "lost" },
 ];
-
-function scoreCategory(score: number) {
-  if (score >= 80) return "HOT";
-  if (score >= 60) return "WARM";
-  if (score >= 40) return "LOW";
-  return "SKIP";
-}
 
 function daysFromNow(days: number) {
   const date = new Date();
@@ -165,8 +159,6 @@ async function main() {
         rating: 3.8 + (score % 10) / 10,
         review_count: 10 + (score % 40),
         source: "Business directory",
-        score,
-        score_category: scoreCategory(score),
         pipeline_stage_id: stageIdBySlug.get(stageSlug),
         last_contacted_at:
           lastContactedDaysAgo === null
@@ -277,6 +269,8 @@ async function main() {
         content: "Interested but wants to see examples of past work first.",
       });
     }
+
+    await computeAndStoreScore(supabase, leadId);
   }
 
   console.log(`Seeded organization ${organizationId} with ${LEADS.length} leads.`);

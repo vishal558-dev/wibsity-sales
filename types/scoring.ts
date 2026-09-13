@@ -1,3 +1,5 @@
+import type { ScoreCategory } from "@/types/lead";
+
 export interface ScoreFactor {
   points: number;
   maxPoints: number;
@@ -11,7 +13,7 @@ export interface ScoreBreakdown {
   localRelevance: ScoreFactor;
   other: ScoreFactor;
   overallScore: number;
-  scoreCategory: "HOT" | "WARM" | "LOW" | "SKIP";
+  scoreCategory: ScoreCategory;
 }
 
 export interface ScoreInput {

@@ -15,9 +15,10 @@ interface LeadFieldsForScoring {
 // Takes whatever lead shape the caller already has (a full LeadRecord from
 // a page load, or the minimal columns computeAndStoreScore selects below)
 // and loads the two extra pieces scoring needs: the latest *completed*
-// audit's score (not just the latest audit — a currently-failed retry of a
-// previously-successful audit shouldn't erase a known website score) and
-// whether the lead has a named contact.
+// audit's score (not just the latest audit — this protects a known score
+// from a failed/pipeline-error retry, though a legitimate re-audit that
+// reaches "completed" with an unreachable site still honestly resets the
+// score to null, by design) and whether the lead has a named contact.
 export async function loadScoreInput(supabase: SupabaseClient, lead: LeadFieldsForScoring): Promise<ScoreInput> {
   const { data: audit } = await supabase
     .from("website_audits")
