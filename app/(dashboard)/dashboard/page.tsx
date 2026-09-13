@@ -1,12 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSessionOrganizationId } from "@/lib/supabase/session";
-import {
-  getHasAnyLeads,
-  getKpiCounts,
-  getPriorityLeads,
-  getRecentActivity,
-  getTodaysActions,
-} from "@/lib/crm/dashboard-queries";
+import { getDashboardSnapshot } from "@/lib/crm/dashboard-queries";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { LeadActionList } from "@/components/dashboard/lead-action-list";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
@@ -29,16 +23,9 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
 
-  const [kpis, todaysActions, priorityLeads, recentActivity, hasAnyLeads] =
-    await Promise.all([
-      getKpiCounts(supabase, organizationId),
-      getTodaysActions(supabase, organizationId),
-      getPriorityLeads(supabase, organizationId),
-      getRecentActivity(supabase, organizationId),
-      getHasAnyLeads(supabase, organizationId),
-    ]);
+  const dashboard = await getDashboardSnapshot(supabase, organizationId);
 
-  if (!hasAnyLeads) {
+  if (!dashboard.hasAnyLeads) {
     return (
       <EmptyState
         title="No leads yet"
@@ -59,17 +46,17 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="Hot leads" value={kpis.hotLeads} accentClassName="bg-score-hot" />
-        <StatCard label="Warm leads" value={kpis.warmLeads} accentClassName="bg-score-warm" />
-        <StatCard label="Follow-ups due" value={kpis.followUpsDue} />
-        <StatCard label="Replies" value={kpis.replies} />
-        <StatCard label="Demos / meetings" value={kpis.demosAndMeetings} />
+        <StatCard label="Hot leads" value={dashboard.kpis.hotLeads} accentClassName="bg-score-hot" />
+        <StatCard label="Warm leads" value={dashboard.kpis.warmLeads} accentClassName="bg-score-warm" />
+        <StatCard label="Follow-ups due" value={dashboard.kpis.followUpsDue} />
+        <StatCard label="Replies" value={dashboard.kpis.replies} />
+        <StatCard label="Demos / meetings" value={dashboard.kpis.demosAndMeetings} />
       </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">TODAY&apos;S ACTIONS</h2>
         <LeadActionList
-          leads={todaysActions}
+          leads={dashboard.todaysActions}
           showFollowUp
           emptyMessage="Nothing due today"
         />
@@ -78,11 +65,11 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-medium text-muted-foreground">PRIORITY LEADS</h2>
-          <LeadActionList leads={priorityLeads} emptyMessage="No uncontacted leads" />
+          <LeadActionList leads={dashboard.priorityLeads} emptyMessage="No uncontacted leads" />
         </div>
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-medium text-muted-foreground">RECENT ACTIVITY</h2>
-          <RecentActivity activities={recentActivity} />
+          <RecentActivity activities={dashboard.recentActivity} />
         </div>
       </div>
     </>

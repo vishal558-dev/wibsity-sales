@@ -1,12 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Lead, LeadActivity } from "@/types/lead";
 
-function endOfToday() {
-  const date = new Date();
-  date.setHours(23, 59, 59, 999);
-  return date.toISOString();
-}
-
 export interface KpiCounts {
   hotLeads: number;
   warmLeads: number;
@@ -15,118 +9,93 @@ export interface KpiCounts {
   demosAndMeetings: number;
 }
 
-export async function getKpiCounts(
-  supabase: SupabaseClient,
-  organizationId: string,
-): Promise<KpiCounts> {
-  // Each of these is a database-side count (head: true — no rows are
-  // fetched or deserialized), not a "fetch every lead, filter in JS"
-  // scan. That matters because this runs on every dashboard load, for
-  // every user, and cost should scale with the answer, not with the
-  // org's total lead count.
-  const [hot, warm, followUpsDue, replies, demoSent, meeting] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId)
-      .eq("score_category", "HOT"),
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId)
-      .eq("score_category", "WARM"),
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId)
-      .lte("next_followup_at", endOfToday()),
-    supabase
-      .from("leads")
-      .select("id, pipeline_stage:pipeline_stages!inner(slug)", { count: "exact", head: true })
-      .eq("organization_id", organizationId)
-      .eq("pipeline_stage.slug", "replied"),
-    supabase
-      .from("leads")
-      .select("id, pipeline_stage:pipeline_stages!inner(slug)", { count: "exact", head: true })
-      .eq("organization_id", organizationId)
-      .eq("pipeline_stage.slug", "demo_sent"),
-    supabase
-      .from("leads")
-      .select("id, pipeline_stage:pipeline_stages!inner(slug)", { count: "exact", head: true })
-      .eq("organization_id", organizationId)
-      .eq("pipeline_stage.slug", "meeting"),
-  ]);
-
-  return {
-    hotLeads: hot.count ?? 0,
-    warmLeads: warm.count ?? 0,
-    followUpsDue: followUpsDue.count ?? 0,
-    replies: replies.count ?? 0,
-    demosAndMeetings: (demoSent.count ?? 0) + (meeting.count ?? 0),
-  };
+export interface DashboardSnapshot {
+  hasAnyLeads: boolean;
+  kpis: KpiCounts;
+  todaysActions: Lead[];
+  priorityLeads: Lead[];
+  recentActivity: LeadActivity[];
 }
 
-export async function getTodaysActions(
-  supabase: SupabaseClient,
-  organizationId: string,
-  limit = 5,
-): Promise<Lead[]> {
-  const { data } = await supabase
-    .from("leads")
-    .select(
-      "id, business_name, city, state, score, score_category, last_contacted_at, next_followup_at",
-    )
-    .eq("organization_id", organizationId)
-    .lte("next_followup_at", endOfToday())
-    .order("next_followup_at", { ascending: true })
-    .limit(limit);
-
-  return (data ?? []) as Lead[];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export async function getPriorityLeads(
-  supabase: SupabaseClient,
-  organizationId: string,
-  limit = 5,
-): Promise<Lead[]> {
-  const { data } = await supabase
-    .from("leads")
-    .select(
-      "id, business_name, city, state, score, score_category, last_contacted_at, next_followup_at",
-    )
-    .eq("organization_id", organizationId)
-    .is("last_contacted_at", null)
-    .order("score", { ascending: false })
-    .limit(limit);
-
-  return (data ?? []) as Lead[];
+function isNullableNumber(value: unknown): value is number | null {
+  return value === null || typeof value === "number";
 }
 
-export async function getRecentActivity(
-  supabase: SupabaseClient,
-  organizationId: string,
-  limit = 8,
-): Promise<LeadActivity[]> {
-  const { data } = await supabase
-    .from("lead_activities")
-    .select("id, lead_id, type, description, created_at, lead:leads!inner(business_name, organization_id)")
-    .eq("lead.organization_id", organizationId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  return (data ?? []) as unknown as LeadActivity[];
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
 }
 
-// Used by the dashboard header to distinguish a brand-new org (no seed data
-// run yet) from one that genuinely has zero leads matching a section's filter.
-export async function getHasAnyLeads(
+function isLead(value: unknown): value is Lead {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.business_name === "string" &&
+    isNullableString(value.city) &&
+    isNullableString(value.state) &&
+    isNullableNumber(value.score) &&
+    isNullableString(value.score_category) &&
+    isNullableString(value.last_contacted_at) &&
+    isNullableString(value.next_followup_at)
+  );
+}
+
+function isLeadActivity(value: unknown): value is LeadActivity {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.lead_id === "string" &&
+    typeof value.type === "string" &&
+    typeof value.description === "string" &&
+    typeof value.created_at === "string" &&
+    (value.lead === null ||
+      (isRecord(value.lead) && typeof value.lead.business_name === "string"))
+  );
+}
+
+export function parseDashboardSnapshot(value: unknown): DashboardSnapshot {
+  if (!isRecord(value) || !isRecord(value.kpis)) {
+    throw new Error("Dashboard returned an invalid response.");
+  }
+
+  const { kpis } = value;
+  const hasValidKpis =
+    typeof kpis.hotLeads === "number" &&
+    typeof kpis.warmLeads === "number" &&
+    typeof kpis.followUpsDue === "number" &&
+    typeof kpis.replies === "number" &&
+    typeof kpis.demosAndMeetings === "number";
+
+  if (
+    typeof value.hasAnyLeads !== "boolean" ||
+    !hasValidKpis ||
+    !Array.isArray(value.todaysActions) ||
+    !value.todaysActions.every(isLead) ||
+    !Array.isArray(value.priorityLeads) ||
+    !value.priorityLeads.every(isLead) ||
+    !Array.isArray(value.recentActivity) ||
+    !value.recentActivity.every(isLeadActivity)
+  ) {
+    throw new Error("Dashboard returned an invalid response.");
+  }
+
+  return value as unknown as DashboardSnapshot;
+}
+
+export async function getDashboardSnapshot(
   supabase: SupabaseClient,
   organizationId: string,
-): Promise<boolean> {
-  const { count } = await supabase
-    .from("leads")
-    .select("id", { count: "exact", head: true })
-    .eq("organization_id", organizationId);
+): Promise<DashboardSnapshot> {
+  const { data, error } = await supabase.rpc("get_dashboard_snapshot", {
+    p_organization_id: organizationId,
+  });
 
-  return (count ?? 0) > 0;
+  if (error) {
+    throw new Error("Unable to load the dashboard right now.", { cause: error });
+  }
+
+  return parseDashboardSnapshot(data);
 }

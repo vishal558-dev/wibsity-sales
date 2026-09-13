@@ -62,7 +62,7 @@ A job must survive a crash mid-run, an Inngest-triggered retry, or a user clicki
 
 ## Idempotent Inngest processing
 
-- The function is registered with `id: "generate-leads"` and `idempotency: "event.data.jobId"`, so Inngest itself deduplicates multiple triggers of the same job (e.g. a flaky client sending the event twice) within its dedupe window — only one concurrent run per `jobId` proceeds.
+- The function is registered with `id: "generate-leads"` and no event-level `idempotency` key. An earlier draft set `idempotency: "event.data.jobId"`, but Phase 3 Task 11 manual verification found this silently broke manual retry: Inngest deduped the retry's resend of the same `jobId` against the original failed run, so clicking Retry did nothing. It was removed in favor of relying purely on the resumability guarantees above — each step only touches `generation_results` rows still in `status = 'pending'`, so a brand-new run for the same `jobId` (concurrent or retried) naturally can't double-process or duplicate work even without an event-level dedupe key.
 - The event payload is just `{ jobId }` — the function loads the job row (and its `organization_id`) itself rather than trusting anything else from the caller.
 - **Manual retry re-sends the same event for the same job**, rather than creating a new `generation_jobs` row: `retryGenerationAction(jobId)` resets a `failed` job's `status` back to `pending` and re-sends `leadgen/job.created` with the same `jobId`. This supersedes an earlier draft of this design that had Retry resubmit the form as a brand-new job — resumability above is what makes re-running the *same* job safe, so there's no reason to fork a new one and orphan the partially-completed first attempt.
 
