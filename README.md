@@ -40,6 +40,9 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
      pending/processing status tracking
    - `db/migrations/0006_leads_score_category_index.sql`: dashboard speed —
      index for the HOT/WARM KPI counts
+   - `db/migrations/0007_dashboard_snapshot.sql`: dashboard snapshot RPC
+   - `db/migrations/0008_lock_user_organization_membership.sql`: prevents
+     authenticated users from changing their organization membership
 
 4. **Install dependencies and seed demo data**:
 
