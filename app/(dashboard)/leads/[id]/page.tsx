@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionOrganizationId } from "@/lib/supabase/session";
 import { getLeadById, getNotesForLead } from "@/lib/crm/leads";
 import { getActivitiesForLead } from "@/lib/crm/activities";
 import { getLatestAuditForLead } from "@/lib/audits/queries";
@@ -12,6 +13,7 @@ import { ScoreBreakdownCard } from "@/components/leads/score-breakdown-card";
 import { LeadNotes } from "@/components/leads/lead-notes";
 import { ActivityTimeline } from "@/components/leads/activity-timeline";
 import { FollowUpCard } from "@/components/leads/follow-up-card";
+import { NoOrganizationState } from "@/components/no-organization-state";
 
 export default async function LeadDetailPage({
   params,
@@ -19,17 +21,14 @@ export default async function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("users")
-    .select("organization_id")
-    .eq("id", user!.id)
-    .single();
+  const organizationId = await getSessionOrganizationId();
 
-  const lead = await getLeadById(supabase, profile!.organization_id, id);
+  if (!organizationId) {
+    return <NoOrganizationState />;
+  }
+
+  const supabase = await createClient();
+  const lead = await getLeadById(supabase, organizationId, id);
   if (!lead) notFound();
 
   const notes = await getNotesForLead(supabase, lead.id);

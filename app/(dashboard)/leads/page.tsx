@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionOrganizationId } from "@/lib/supabase/session";
 import { getLeads, getLeadFilterOptions } from "@/lib/crm/leads";
 import { getPipelineStages } from "@/lib/crm/pipeline";
 import { PageHeader } from "@/components/page-header";
@@ -8,6 +9,7 @@ import { LeadTable } from "@/components/leads/lead-table";
 import { LeadSearch } from "@/components/leads/lead-search";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import { Button } from "@/components/ui/button";
+import { NoOrganizationState } from "@/components/no-organization-state";
 import type { LeadFilters as LeadFiltersType, ScoreCategory } from "@/types/lead";
 
 export default async function LeadsPage({
@@ -16,16 +18,13 @@ export default async function LeadsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
+  const organizationId = await getSessionOrganizationId();
+
+  if (!organizationId) {
+    return <NoOrganizationState />;
+  }
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("users")
-    .select("organization_id")
-    .eq("id", user!.id)
-    .single();
-  const organizationId = profile!.organization_id;
 
   const filters: LeadFiltersType = {
     search: params.q,

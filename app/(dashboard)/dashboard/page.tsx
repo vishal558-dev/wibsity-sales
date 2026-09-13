@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionOrganizationId } from "@/lib/supabase/session";
 import {
   getHasAnyLeads,
   getKpiCounts,
@@ -10,6 +11,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { LeadActionList } from "@/components/dashboard/lead-action-list";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { EmptyState } from "@/components/empty-state";
+import { NoOrganizationState } from "@/components/no-organization-state";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -19,27 +21,13 @@ function greeting() {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = await supabase
-    .from("users")
-    .select("organization_id")
-    .eq("id", user!.id)
-    .single();
-
-  const organizationId = profile?.organization_id;
+  const organizationId = await getSessionOrganizationId();
 
   if (!organizationId) {
-    return (
-      <EmptyState
-        title="No organization set up yet"
-        description="Run db/seed.ts to create a demo organization and leads."
-      />
-    );
+    return <NoOrganizationState />;
   }
+
+  const supabase = await createClient();
 
   const [kpis, todaysActions, priorityLeads, recentActivity, hasAnyLeads] =
     await Promise.all([

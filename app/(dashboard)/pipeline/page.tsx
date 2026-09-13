@@ -1,19 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionOrganizationId } from "@/lib/supabase/session";
 import { getPipelineLeads, getPipelineStages } from "@/lib/crm/pipeline";
 import { PageHeader } from "@/components/page-header";
 import { PipelineBoard } from "@/components/pipeline/pipeline-board";
+import { NoOrganizationState } from "@/components/no-organization-state";
 
 export default async function PipelinePage() {
+  const organizationId = await getSessionOrganizationId();
+
+  if (!organizationId) {
+    return <NoOrganizationState />;
+  }
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("users")
-    .select("organization_id")
-    .eq("id", user!.id)
-    .single();
-  const organizationId = profile!.organization_id;
 
   const [stages, leads] = await Promise.all([
     getPipelineStages(supabase, organizationId),

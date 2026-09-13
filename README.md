@@ -38,6 +38,8 @@ Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (
      lead-generation job filters and result-to-lead linkage
    - `db/migrations/0005_website_audit_status.sql`: Phase 4 website audit
      pending/processing status tracking
+   - `db/migrations/0006_leads_score_category_index.sql`: dashboard speed —
+     index for the HOT/WARM KPI counts
 
 4. **Install dependencies and seed demo data**:
 

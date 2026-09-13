@@ -19,7 +19,12 @@ export async function getKpiCounts(
   supabase: SupabaseClient,
   organizationId: string,
 ): Promise<KpiCounts> {
-  const [hot, warm, followUpsDue, stageCounts] = await Promise.all([
+  // Each of these is a database-side count (head: true — no rows are
+  // fetched or deserialized), not a "fetch every lead, filter in JS"
+  // scan. That matters because this runs on every dashboard load, for
+  // every user, and cost should scale with the answer, not with the
+  // org's total lead count.
+  const [hot, warm, followUpsDue, replies, demoSent, meeting] = await Promise.all([
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
@@ -37,24 +42,27 @@ export async function getKpiCounts(
       .lte("next_followup_at", endOfToday()),
     supabase
       .from("leads")
-      .select("id, pipeline_stage:pipeline_stages(slug)")
-      .eq("organization_id", organizationId),
+      .select("id, pipeline_stage:pipeline_stages!inner(slug)", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .eq("pipeline_stage.slug", "replied"),
+    supabase
+      .from("leads")
+      .select("id, pipeline_stage:pipeline_stages!inner(slug)", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .eq("pipeline_stage.slug", "demo_sent"),
+    supabase
+      .from("leads")
+      .select("id, pipeline_stage:pipeline_stages!inner(slug)", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .eq("pipeline_stage.slug", "meeting"),
   ]);
-
-  const stages = (stageCounts.data ?? []) as unknown as Array<{
-    pipeline_stage: { slug: string } | null;
-  }>;
-  const replies = stages.filter((l) => l.pipeline_stage?.slug === "replied").length;
-  const demosAndMeetings = stages.filter(
-    (l) => l.pipeline_stage?.slug === "demo_sent" || l.pipeline_stage?.slug === "meeting",
-  ).length;
 
   return {
     hotLeads: hot.count ?? 0,
     warmLeads: warm.count ?? 0,
     followUpsDue: followUpsDue.count ?? 0,
-    replies,
-    demosAndMeetings,
+    replies: replies.count ?? 0,
+    demosAndMeetings: (demoSent.count ?? 0) + (meeting.count ?? 0),
   };
 }
 

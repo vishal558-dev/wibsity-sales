@@ -1,28 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionOrganizationId } from "@/lib/supabase/session";
 import { inngest } from "@/lib/inngest/client";
 import { generationFormSchema } from "@/lib/lead-gen/schemas";
 
 export interface GenerationFormState {
   error: string | null;
   fieldErrors: Record<string, string[] | undefined>;
-}
-
-// A signed-in user's organization_id, derived from their session — never
-// trust an organization id supplied by the client itself.
-async function getSessionOrganizationId(supabase: SupabaseClient): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("users")
-    .select("organization_id")
-    .eq("id", user!.id)
-    .single();
-  return profile!.organization_id as string;
 }
 
 export async function submitGenerationAction(
@@ -42,8 +28,12 @@ export async function submitGenerationAction(
     return { error: null, fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
+  const organizationId = await getSessionOrganizationId();
+  if (!organizationId) {
+    return { error: "Your account isn't fully set up yet. Contact an admin.", fieldErrors: {} };
+  }
+
   const supabase = await createClient();
-  const organizationId = await getSessionOrganizationId(supabase);
   const input = parsed.data;
 
   const { data: job, error } = await supabase
@@ -71,9 +61,10 @@ export async function submitGenerationAction(
 }
 
 export async function retryGenerationAction(jobId: string): Promise<void> {
-  const supabase = await createClient();
-  const organizationId = await getSessionOrganizationId(supabase);
+  const organizationId = await getSessionOrganizationId();
+  if (!organizationId) return;
 
+  const supabase = await createClient();
   const { data: job } = await supabase
     .from("generation_jobs")
     .select("id, status")

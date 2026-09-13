@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { SearchCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionOrganizationId } from "@/lib/supabase/session";
 import { getLatestAuditsForOrg } from "@/lib/audits/queries";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { NoOrganizationState } from "@/components/no-organization-state";
 import type { AuditStatus } from "@/types/audit";
 
 function formatDate(iso: string): string {
@@ -17,17 +19,14 @@ function statusLabel(status: AuditStatus): string {
 }
 
 export default async function AuditsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("users")
-    .select("organization_id")
-    .eq("id", user!.id)
-    .single();
+  const organizationId = await getSessionOrganizationId();
 
-  const audits = await getLatestAuditsForOrg(supabase, profile!.organization_id);
+  if (!organizationId) {
+    return <NoOrganizationState />;
+  }
+
+  const supabase = await createClient();
+  const audits = await getLatestAuditsForOrg(supabase, organizationId);
 
   return (
     <>
